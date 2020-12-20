@@ -38,7 +38,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         binding.navView.invalidate()
     }
 
-    private fun setDrawerToggle(){
+    private fun setDrawerToggle() {
         val drawerToggle = ActionBarDrawerToggle(
             this,                  //  host Activity
             binding.drawerLayout,         //  instance DrawerLayout
@@ -50,69 +50,37 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         drawerToggle.syncState()
     }
 
-    //  Динамическое создание элементов.
+    //  Динамическое создание элементов. Вызывается в OnCreate().
     private fun addItem(count: Int) {
         val menu: Menu = binding.navView.menu
         for (item in 1..count) {
             //  Создаём динамически нужное количество элементов меню.
             menu.add(Menu.NONE, item, Menu.NONE, "Item $item")
-            //  устанавливаем им при создании случайный цвет.
+            //  устанавливаем им при создании случайный цвет для каждого элемента.
             val color = argb(255, Random.nextInt(256), Random.nextInt(256), Random.nextInt(256))
+            //  mapColor.set(item, color) - аналогичная запись.
             mapColor[item] = color
+
         }
     }
 
     override fun onNavigationItemSelected(item: MenuItem): Boolean {
-        val color = mapColor[item.itemId]
-        if (color != null) {
-            binding.drawerLayout.setBackgroundColor(color)
 
+        val itemNumber = item.itemId
+        //  Получаем из mapColor цвет, соответствующий нажатому элементу.
+        val color = mapColor[itemNumber]
+
+        if (color != null) {
+            //  Создаём экземпляр фрагмета через вызов метода из компаньон-объекта в классе фрагмента,
+            //  передаём аргументов цвет, соответствующий нажатому элементу.
+            val fragInst = MyFragment.createMyFragmentInstance(itemNumber, color)
+            //  Используется один фрагмент, поэтому он будет перетираться через replace().
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container_view, fragInst).commit()
         }
-        binding.textView.text = item.title
 
         //  Закрытие DrawerLayout, схлопывается влево.
         binding.drawerLayout.closeDrawer(GravityCompat.START)
         return true
     }
-
-    override fun onStart() {
-        super.onStart()
-        Log.d(TAG, "onStart")
-    }
-
-    override fun onResume() {
-        super.onResume()
-        Log.d(TAG, "onResume")
-    }
-
-    override fun onPause() {
-        super.onPause()
-        Log.d(TAG, "onPause")
-    }
-
-    override fun onStop() {
-        super.onStop()
-        Log.d(TAG, "onStop")
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Log.d(TAG, "onDestroy")
-    }
-
-    override fun onRestart() {
-        super.onRestart()
-        Log.d(TAG, "onRestart")
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        Log.d(TAG, "onSaveInstanceState")
-    }
-
-    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
-        super.onRestoreInstanceState(savedInstanceState)
-        Log.d(TAG, "onRestoreInstanceState")
-    }
-
 }
