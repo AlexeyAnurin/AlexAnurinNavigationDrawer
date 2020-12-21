@@ -1,7 +1,7 @@
-package ru.alexanurin.alexanurinnavigationdrawer
+package ru.alexanurin.alexanurinnavigationdrawer.livedata
 
 import android.content.Intent
-import android.graphics.Color.*
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.Menu
@@ -10,23 +10,25 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
-
+import androidx.fragment.app.activityViewModels
 import com.google.android.material.navigation.NavigationView
+import ru.alexanurin.alexanurinnavigationdrawer.MyFragment
+import ru.alexanurin.alexanurinnavigationdrawer.MyFragment.Companion.createMyFragmentInstance
+import ru.alexanurin.alexanurinnavigationdrawer.R
 import ru.alexanurin.alexanurinnavigationdrawer.databinding.ActivityMainBinding
-import ru.alexanurin.alexanurinnavigationdrawer.livedata.SecondActivity
-import ru.alexanurin.alexanurinnavigationdrawer.livedata.SharedViewModel
 import kotlin.random.Random
 
-
-//  кол-во элементов меню
 private const val ITEM_COUNT = 12
-private const val TAG = "MainActivity"
+private const val TAG = "SecondActivity"
 
-class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
-    //  view binding
+class SecondActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
+
     private lateinit var binding: ActivityMainBinding
 
     private var mapColor = mutableMapOf<Int, Int>()
+
+    //  экземпляр SharedViewModel.
+    private val sharedViewModel: SharedViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,7 +36,12 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        //  создать фрагмент без параметров при запуске активити.
+        supportFragmentManager.beginTransaction()
+            .add(R.id.fragment_container_view, createMyFragmentInstance()).commit()
+
         setSupportActionBar(binding.appBarView.toolbar)
+        title = "LiveData example"
         //  кнопка для открытия Drawer
         setDrawerToggle()
 
@@ -42,20 +49,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         addItem(ITEM_COUNT)
         binding.navView.invalidate()
-    }
-
-    //  меню livedata
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        menuInflater.inflate(R.menu.main, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.action_liveData) {
-            val intent = Intent(this, SecondActivity::class.java)
-            startActivity(intent)
-        }
-        return true
     }
 
     private fun setDrawerToggle() {
@@ -77,7 +70,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             //  Создаём динамически нужное количество элементов меню.
             menu.add(Menu.NONE, item, Menu.NONE, "Item $item")
             //  устанавливаем им при создании случайный цвет для каждого элемента.
-            val color = argb(255, Random.nextInt(256), Random.nextInt(256), Random.nextInt(256))
+            val color =
+                Color.argb(255, Random.nextInt(256), Random.nextInt(256), Random.nextInt(256))
             //  mapColor.set(item, color) - аналогичная запись.
             mapColor[item] = color
 
@@ -91,12 +85,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val color = mapColor[itemNumber]
 
         if (color != null) {
-            //  Создаём экземпляр фрагмета через вызов метода из компаньон-объекта в классе фрагмента,
-            //  передаём аргументов цвет, соответствующий нажатому элементу.
-            val fragInst = MyFragment.createMyFragmentInstance(itemNumber, color)
-            //  Используется один фрагмент, поэтому он будет перетираться через replace().
-            supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container_view, fragInst).commit()
+            //  Передать пару itemNumber to color в контейнер LiveData во ViewModel по нажатию на
+            // элемент списка в Drawer.
+            sharedViewModel.refreshData(itemNumber to color)
         }
 
         //  Закрытие DrawerLayout, схлопывается влево.
@@ -104,3 +95,4 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         return true
     }
 }
+
